@@ -1,0 +1,19 @@
+{
+  "individual": {
+    "title": "AHP 전문가 설문 응답 확인서",
+    "subtitle": "해농공매 물량 배분 평가항목 가중치 산출",
+    "issued_by": "(사)해외농업자원개발협회"
+  },
+  "report": {
+    "title": "AHP 전문가 설문 분석 결과 보고서",
+    "sections": {
+      "overview":     "Ⅰ. 조사 개요",
+      "respondents":  "Ⅱ. 응답자 구성",
+      "matrix":       "Ⅲ. 집단 쌍대비교 행렬",
+      "weights":      "Ⅳ. 항목별 가중치 결과",
+      "individual":   "Ⅴ. 개인별 응답 요약",
+      "insights":     "Ⅵ. 주요 시사점",
+      "conclusion":   "Ⅶ. 결론 및 활용 방안"
+    }
+  }
+}

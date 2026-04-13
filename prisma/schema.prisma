@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Survey {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  locale      String        @default("ko")
+  ownerId     String?       // 2단계: 사용자 연결
+  isPublic    Boolean       @default(false)
+  rounds      SurveyRound[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model SurveyRound {
+  id          String       @id @default(cuid())
+  surveyId    String
+  survey      Survey       @relation(fields: [surveyId], references: [id])
+  roundNo     Int
+  token       String       @unique
+  status      RoundStatus  @default(OPEN)
+  targetCount Int          @default(16)
+  respondents Respondent[]
+  groupResult GroupResult?
+  createdAt   DateTime     @default(now())
+}
+
+model Respondent {
+  id            String            @id @default(cuid())
+  roundId       String
+  round         SurveyRound       @relation(fields: [roundId], references: [id])
+  name          String
+  organization  String
+  position      String
+  category      String
+  answers       Answer[]
+  signature     Signature?
+  submissionLog SubmissionLog?
+  result        IndividualResult?
+  isLocked      Boolean           @default(false)
+  submittedAt   DateTime?
+  createdAt     DateTime          @default(now())
+}
+
+model Answer {
+  id           String     @id @default(cuid())
+  respondentId String
+  respondent   Respondent @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  questionCode String
+  itemA        String
+  itemB        String
+  rawValue     Float
+  matrixValue  Float
+  createdAt    DateTime   @default(now())
+}
+
+model IndividualResult {
+  id           String        @id @default(cuid())
+  respondentId String        @unique
+  respondent   Respondent    @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  weights      Json
+  lambdaMax    Float
+  ci           Float
+  cr           Float
+  isValid      Boolean
+  adjustment   CRAdjustment?
+  createdAt    DateTime      @default(now())
+}
+
+model CRAdjustment {
+  id               String           @id @default(cuid())
+  resultId         String           @unique
+  result           IndividualResult @relation(fields: [resultId], references: [id])
+  originalAnswers  Json
+  adjustedAnswers  Json
+  adjustedWeights  Json
+  adjustedCr       Float
+  useAdjusted      Boolean          @default(false)
+  changedQuestions Json
+  adjustedAt       DateTime         @default(now())
+}
+
+model GroupResult {
+  id            String      @id @default(cuid())
+  roundId       String      @unique
+  round         SurveyRound @relation(fields: [roundId], references: [id])
+  validCount    Int
+  geoMeanMatrix Json
+  weights4      Json
+  weights3      Json
+  groupCr4      Float
+  groupCr3      Float
+  calculatedAt  DateTime    @default(now())
+}
+
+model Signature {
+  id           String     @id @default(cuid())
+  respondentId String     @unique
+  respondent   Respondent @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  imageData    String     @db.Text
+  signedAt     DateTime
+}
+
+model SubmissionLog {
+  id           String     @id @default(cuid())
+  respondentId String     @unique
+  respondent   Respondent @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  ipAddress    String
+  userAgent    String
+  submittedAt  DateTime
+  dataHash     String
+}
+
+// 2단계 스텁 (구조만)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+}
+
+model Subscription {
+  id String @id @default(cuid())
+}
+
+model Payment {
+  id String @id @default(cuid())
+}
+
+enum RoundStatus {
+  OPEN
+  CLOSED
+}

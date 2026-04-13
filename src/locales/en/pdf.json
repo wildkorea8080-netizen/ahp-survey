@@ -1,0 +1,19 @@
+{
+  "individual": {
+    "title": "AHP Expert Survey Response Confirmation",
+    "subtitle": "Calculation of Evaluation Criteria Weights for Haenong Volume Allocation",
+    "issued_by": "Korea Overseas Agriculture & Resource Development Association"
+  },
+  "report": {
+    "title": "AHP Expert Survey Analysis Report",
+    "sections": {
+      "overview":     "I. Survey Overview",
+      "respondents":  "II. Respondent Composition",
+      "matrix":       "III. Group Pairwise Comparison Matrix",
+      "weights":      "IV. Criteria Weight Results",
+      "individual":   "V. Individual Response Summary",
+      "insights":     "VI. Key Insights",
+      "conclusion":   "VII. Conclusion and Application"
+    }
+  }
+}

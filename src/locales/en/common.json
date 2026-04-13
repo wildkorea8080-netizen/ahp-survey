@@ -1,0 +1,16 @@
+{
+  "app": { "title": "Haenong AHP Expert Survey System" },
+  "nav": { "admin": "Admin", "survey": "Survey" },
+  "action": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "download": "Download"
+  },
+  "status": { "open": "Open", "closed": "Closed" },
+  "cr": {
+    "valid": "✅ Acceptable",
+    "invalid": "⚠ Re-survey",
+    "adjusted": "🔧 Adjusted"
+  }
+}

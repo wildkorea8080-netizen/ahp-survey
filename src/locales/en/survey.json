@@ -1,0 +1,24 @@
+{
+  "intro": {
+    "title": "Haenong AHP Expert Survey",
+    "subtitle": "Calculating Relative Importance (Weights) of Evaluation Criteria",
+    "description": "This survey calculates the relative importance of evaluation criteria for Haenong volume allocation using AHP (Analytic Hierarchy Process).",
+    "duration": "6 questions · Approx. 5 minutes · Cannot be modified after submission"
+  },
+  "items": {
+    "inv":  { "label": "① Investment Scale",    "def": "Cumulative FDI from domestic to overseas agricultural corporations" },
+    "farm": { "label": "② Farming Scale",        "def": "Previous year's cultivated area" },
+    "per":  { "label": "③ Farming Period",       "def": "Actual years of farming" },
+    "imp":  { "label": "④ Import Contribution",  "def": "Import volume over the last 3 years" }
+  },
+  "scale": {
+    "equal":    "Equally important",
+    "slightly": "Slightly more important",
+    "moderate": "Moderately more important",
+    "strong":   "Strongly more important",
+    "extreme":  "Extremely more important"
+  },
+  "signature": {
+    "agree": "I confirm that the above responses reflect my honest judgment and consent to their use in calculating weights."
+  }
+}

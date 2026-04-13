@@ -1,0 +1,16 @@
+{
+  "app": { "title": "해농공매 AHP 전문가 설문 시스템" },
+  "nav": { "admin": "관리자", "survey": "설문 페이지" },
+  "action": {
+    "submit": "제출",
+    "cancel": "취소",
+    "save": "저장",
+    "download": "다운로드"
+  },
+  "status": { "open": "진행중", "closed": "마감" },
+  "cr": {
+    "valid": "✅ 허용",
+    "invalid": "⚠ 재설문",
+    "adjusted": "🔧 보정됨"
+  }
+}
