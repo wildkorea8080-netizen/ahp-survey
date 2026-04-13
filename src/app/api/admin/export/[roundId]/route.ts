@@ -17,7 +17,7 @@ export async function GET(
     const buffer = await generateExcel(roundId)
     const filename = `ahp-export-${roundId}.xlsx`
 
-    return new NextResponse(new Uint8Array(buffer), {
+    return new NextResponse(buffer.buffer as ArrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

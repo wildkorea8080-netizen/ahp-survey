@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const pdfBytes = await generateReportPDF(roundId, itemCount)
     const filename = `report-${itemCount}items-${roundId}.pdf`
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(pdfBytes.buffer as ArrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

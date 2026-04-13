@@ -12,7 +12,7 @@ import { ITEMS4, ITEMS3, PAIRS4, PAIRS3 } from '@/lib/ahp/calculator'
 
 type WeightMap = Record<string, number>
 
-export async function generateExcel(roundId: string): Promise<Buffer> {
+export async function generateExcel(roundId: string): Promise<Uint8Array> {
   const round = await prisma.surveyRound.findUnique({
     where: { id: roundId },
     include: {
@@ -208,6 +208,6 @@ export async function generateExcel(roundId: string): Promise<Buffer> {
   ]
   XLSX.utils.book_append_sheet(wb, ws4, '개인별응답값')
 
-  const xlsxBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
-  return xlsxBuffer
+  const xlsxArray = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array
+  return xlsxArray
 }

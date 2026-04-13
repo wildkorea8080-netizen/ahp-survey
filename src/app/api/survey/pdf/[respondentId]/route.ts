@@ -10,7 +10,7 @@ export async function GET(
   try {
     const pdfBytes = await generateIndividualPDF(respondentId)
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(pdfBytes.buffer as ArrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
