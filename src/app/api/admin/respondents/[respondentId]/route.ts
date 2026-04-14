@@ -19,7 +19,16 @@ export async function DELETE(
     )
   }
 
-  // Cascade: Answer, Signature, SubmissionLog, IndividualResult(→CRAdjustment) 자동 삭제
+  // CRAdjustment는 IndividualResult에 Cascade가 없으므로 수동 삭제
+  const result = await prisma.individualResult.findUnique({
+    where: { respondentId },
+    select: { id: true },
+  })
+  if (result) {
+    await prisma.cRAdjustment.deleteMany({ where: { resultId: result.id } })
+  }
+
+  // 이후 Cascade: Answer, Signature, SubmissionLog, IndividualResult 자동 삭제
   await prisma.respondent.delete({ where: { id: respondentId } })
 
   return NextResponse.json({ ok: true, deleted: respondent.name })
