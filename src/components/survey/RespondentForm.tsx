@@ -118,7 +118,7 @@ export default function RespondentForm({ onNext }: Props) {
           type="submit"
           className="w-full bg-[#1F497D] hover:bg-[#17375E] text-white"
         >
-          {tCommon('action.submit')} →
+          설문 시작하기 →
         </Button>
       </form>
     </div>
