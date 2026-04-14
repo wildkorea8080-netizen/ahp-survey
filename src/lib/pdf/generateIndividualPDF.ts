@@ -8,7 +8,7 @@ import puppeteer from 'puppeteer-core'
 
 // @sparticuz/chromium-min: 바이너리를 런타임에 다운로드 (Vercel 번들 크기 초과 방지)
 const CHROMIUM_URL =
-  'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.tar'
+  'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
 import { buildPdfHtml } from './buildPdfHtml'
 import { prisma } from '@/lib/prisma'
 
