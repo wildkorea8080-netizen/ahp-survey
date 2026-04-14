@@ -4,12 +4,19 @@ import fs from 'fs'
 import path from 'path'
 
 /**
- * pdf-lib에 fontkit을 등록하고 NanumGothic.ttf를 로드한다.
- * Node.js API Route 전용 (서버사이드만 사용)
+ * pdf-lib에 fontkit을 등록하고 NanumGothic woff2를 로드한다.
+ * @fontsource/nanum-gothic 패키지의 한국어 전체 서브셋 파일 사용
  */
 export async function loadKoreanFont(pdfDoc: PDFDocument): Promise<PDFFont> {
   pdfDoc.registerFontkit(fontkit)
-  const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NanumGothic.ttf')
+  const fontPath = path.join(
+    process.cwd(),
+    'node_modules',
+    '@fontsource',
+    'nanum-gothic',
+    'files',
+    'nanum-gothic-korean-400-normal.woff2',
+  )
   const fontBytes = fs.readFileSync(fontPath)
   return pdfDoc.embedFont(fontBytes)
 }
