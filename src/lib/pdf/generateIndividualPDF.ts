@@ -62,66 +62,75 @@ function ftr(page: ReturnType<PDFDocument['addPage']>, font: PDFFont, n: number)
   page.drawText(pTxt, { x: A4.w - MR - tw(pTxt, font, 7), y: 26, size: 7, font, color: C.gray })
 }
 
-function rowLine(page: ReturnType<PDFDocument['addPage']>, y: number) {
-  page.drawLine({ start: { x: ML, y }, end: { x: A4.w - MR, y }, thickness: 0.4, color: C.border })
-}
 
 // ── 페이지 1: 표지 ─────────────────────────────────────────────────────────
 function buildPage1(doc: PDFDocument, font: PDFFont, d: BuildData) {
   const page = doc.addPage([A4.w, A4.h])
 
-  hdr(page, font, d.surveyTitle, `제${d.roundNo}회차`)
+  hdr(page, font, d.surveyTitle)
   ftr(page, font, 1)
 
-  let y = A4.h - 38 - 28
+  let y = A4.h - 38 - 32
 
   // 대제목
   const title = 'AHP 전문가 설문 응답 확인서'
   const titleW = tw(title, font, 18)
   page.drawText(title, { x: (A4.w - titleW) / 2, y, size: 18, font, color: C.navy })
-  y -= 18
+  y -= 24
 
   // 부제목
   const sub = '해농공매 물량 배분 평가항목 가중치 산출'
   const subW = tw(sub, font, 9)
   page.drawText(sub, { x: (A4.w - subW) / 2, y, size: 9, font, color: C.gray })
-  y -= 14
+  y -= 18
 
   // 구분선
   page.drawLine({ start: { x: ML, y }, end: { x: A4.w - MR, y }, thickness: 1.2, color: C.navy })
-  y -= 18
-
-  // 응답자 정보 박스
-  const boxH = 6 * 22 + 10
-  // 박스 테두리
-  page.drawRectangle({ x: ML, y: y - boxH, width: CW, height: boxH,
-    borderColor: C.navy, borderWidth: 1.2, color: C.white })
-  // 박스 헤더
-  page.drawRectangle({ x: ML, y: y - 20, width: CW, height: 20, color: C.navyLight })
-  const hdrTxt = '응  답  자  정  보'
-  page.drawText(hdrTxt, { x: ML + 12, y: y - 14, size: 9, font, color: C.navy })
   y -= 20
 
-  // 필드 행
+  // 응답자 정보 박스
+  const ROW_H = 28   // 각 필드 행 높이
+  const HDR_H = 24   // 박스 헤더 높이
   const fields: [string, string][] = [
-    ['성      명', d.name],
+    ['성      명',   d.name],
     ['소  속  기  관', d.organization],
-    ['직      위', d.position],
-    ['전문가 구분', d.category],
+    ['직      위',   d.position],
+    ['전문가 구분',  d.category],
     ['제 출  일 시', fmt(d.submittedAt)],
   ]
+  const boxH = HDR_H + fields.length * ROW_H
 
-  for (const [label, val] of fields) {
-    const rowY = y - 5
-    page.drawText(label, { x: ML + 12, y: rowY, size: 9, font, color: C.gray })
-    page.drawText(':', { x: ML + 90, y: rowY, size: 9, font, color: C.gray })
-    page.drawText(clamp(val, font, 9, CW - 110), { x: ML + 100, y: rowY, size: 9, font, color: C.dark })
-    y -= 22
-    if (fields.indexOf([label, val] as [string, string]) < fields.length - 1)
-      rowLine(page, y + 17)
+  // 박스 테두리 (먼저 그림)
+  page.drawRectangle({ x: ML, y: y - boxH, width: CW, height: boxH,
+    borderColor: C.navy, borderWidth: 1.2, color: C.white })
+
+  // 박스 헤더
+  page.drawRectangle({ x: ML, y: y - HDR_H, width: CW, height: HDR_H, color: C.navyLight })
+  page.drawText('응  답  자  정  보', { x: ML + 14, y: y - HDR_H + 8, size: 9.5, font, color: C.navy })
+  y -= HDR_H
+
+  // 필드 행
+  for (let i = 0; i < fields.length; i++) {
+    const [label, val] = fields[i]
+    const rowTop = y - i * ROW_H
+    const textY  = rowTop - ROW_H + (ROW_H - 9) / 2
+
+    // 짝수 행 배경
+    if (i % 2 === 1)
+      page.drawRectangle({ x: ML, y: rowTop - ROW_H, width: CW, height: ROW_H,
+        color: rgb(0.97, 0.98, 1) })
+
+    // 구분선 (첫 행 제외)
+    if (i > 0)
+      page.drawLine({ start: { x: ML, y: rowTop }, end: { x: A4.w - MR, y: rowTop },
+        thickness: 0.4, color: C.border })
+
+    page.drawText(label, { x: ML + 14, y: textY, size: 9, font, color: C.gray })
+    page.drawText(':', { x: ML + 96,  y: textY, size: 9, font, color: C.gray })
+    page.drawText(clamp(val, font, 9, CW - 118), { x: ML + 106, y: textY, size: 9, font, color: C.dark })
   }
 
-  y -= 10
+  y -= fields.length * ROW_H + 14
 
   // 하단 발행 기관
   y = 130
