@@ -59,7 +59,7 @@ export function drawRect(
   page.drawRectangle({ x, y, width, height, color })
 }
 
-/** 테두리 사각형 */
+/** 테두리 사각형 (배경 투명) */
 export function drawBorderRect(
   page: PDFPage,
   x: number,
@@ -73,7 +73,7 @@ export function drawBorderRect(
     x, y, width, height,
     borderColor,
     borderWidth,
-    color: rgb(1, 1, 1),
+    // fill 없음 → 투명 (아래 내용이 보임)
   })
 }
 
