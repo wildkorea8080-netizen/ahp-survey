@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateIndividualPDF } from '@/services/pdf.service'
 
+// Puppeteer 콜드스타트 대비 60초 타임아웃
+export const maxDuration = 60
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ respondentId: string }> }
