@@ -181,16 +181,21 @@ export async function generateIndividualPDF(respondentId: string): Promise<Uint8
 
   if (respondent.signature?.imageData) {
     try {
-      const base64 = respondent.signature.imageData.replace(/^data:image\/\w+;base64,/, '')
-      const imgBytes = Buffer.from(base64, 'base64')
-      const img = respondent.signature.imageData.includes('png')
+      const dataUrl = respondent.signature.imageData
+      const base64 = dataUrl.replace(/^data:image\/[a-z]+;base64,/, '')
+      const binary = atob(base64)
+      const imgBytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) imgBytes[i] = binary.charCodeAt(i)
+      const isPng = dataUrl.startsWith('data:image/png')
+      const img = isPng
         ? await pdfDoc.embedPng(imgBytes)
         : await pdfDoc.embedJpg(imgBytes)
       p2.drawImage(img, { x: 50, y: curY - 65, width: 180, height: 55 })
       drawBorderRect(p2, 50, curY - 65, 180, 55, COLORS.gray, 0.5)
-    } catch {
+    } catch (e) {
+      console.error('[PDF] 서명 임베딩 실패:', e)
       drawBorderRect(p2, 50, curY - 65, 180, 55, COLORS.gray, 0.5)
-      drawText(p2, '[서명 이미지]', 90, curY - 38, font, 8, COLORS.gray)
+      drawText(p2, '[서명 이미지 오류]', 75, curY - 38, font, 8, COLORS.gray)
     }
   }
 
