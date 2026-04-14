@@ -39,7 +39,11 @@ export default function ResponseTable({ rows, onRefresh }: Props) {
     setPdfLoadingId(respondentId)
     try {
       const res = await fetch(`/api/survey/pdf/${respondentId}`)
-      if (!res.ok) return
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+        alert(`PDF 생성 실패: ${json.error ?? res.statusText}`)
+        return
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -47,6 +51,8 @@ export default function ResponseTable({ rows, onRefresh }: Props) {
       a.download = `확인서-${name}.pdf`
       a.click()
       URL.revokeObjectURL(url)
+    } catch (err) {
+      alert(`PDF 다운로드 오류: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setPdfLoadingId(null)
     }
