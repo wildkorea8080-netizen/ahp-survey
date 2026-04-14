@@ -16,6 +16,15 @@ import { prisma } from '@/lib/prisma'
 
 const ORG = process.env.NEXT_PUBLIC_ORG_NAME ?? '(사)해외농업자원개발협회'
 const TOTAL_PAGES = 3
+const L = 50   // 좌 여백
+const R = 50   // 우 여백
+const W = A4.width - L - R  // 콘텐츠 폭
+
+function fmtRaw(raw: number, aLabel: string, bLabel: string): string {
+  if (raw === 0) return '동등 (1)'
+  if (raw > 0) return `${aLabel} ${raw}배 중요`
+  return `${bLabel} ${Math.abs(raw)}배 중요`
+}
 
 export async function generateIndividualPDF(respondentId: string): Promise<Uint8Array> {
   const respondent = await prisma.respondent.findUnique({
@@ -34,222 +43,219 @@ export async function generateIndividualPDF(respondentId: string): Promise<Uint8
   const pdfDoc = await PDFDocument.create()
   const font = await loadKoreanFont(pdfDoc)
 
-  // ─── Page 1: 표지 ─────────────────────────────────────────────
-  const p1 = pdfDoc.addPage([A4.width, A4.height])
-
-  // 상단 헤더 바
-  drawRect(p1, 0, A4.height - 80, A4.width, 80, COLORS.navy)
-  drawText(p1, ORG, 50, A4.height - 30, font, 9, COLORS.white)
-  drawText(p1, respondent.round.survey.title, 50, A4.height - 52, font, 13, COLORS.white)
-  drawText(p1, `제${respondent.round.roundNo}회차`, 50, A4.height - 70, font, 9, rgb(0.7, 0.85, 1))
-
-  // 문서 제목
-  const title = tPdf('individual.title')
-  const titleW = font.widthOfTextAtSize(title, 22)
-  drawText(p1, title, (A4.width - titleW) / 2, A4.height - 170, font, 22, COLORS.navy)
-
-  const subtitle = tPdf('individual.subtitle')
-  const subW = font.widthOfTextAtSize(subtitle, 11)
-  drawText(p1, subtitle, (A4.width - subW) / 2, A4.height - 200, font, 11, COLORS.gray)
-
-  drawHLine(p1, 50, A4.height - 215, A4.width - 100, 1, COLORS.navy)
-
-  // 응답자 정보 박스
-  const boxY = A4.height - 390
-  drawBorderRect(p1, 80, boxY, A4.width - 160, 150, COLORS.navy, 1)
-  drawRect(p1, 80, boxY + 130, A4.width - 160, 20, COLORS.navyLight)
-  drawText(p1, '응답자 정보', 90, boxY + 134, font, 10, COLORS.navy)
-
-  const fields = [
-    ['성명', respondent.name],
-    ['소속기관', respondent.organization],
-    ['직위', respondent.position],
-    ['전문가 구분', respondent.category],
-  ]
-  fields.forEach(([label, value], i) => {
-    const y = boxY + 105 - i * 25
-    drawText(p1, label, 100, y, font, 9, COLORS.gray)
-    drawText(p1, ':', 155, y, font, 9, COLORS.gray)
-    drawText(p1, value, 170, y, font, 9, COLORS.black)
-    if (i < 3) drawHLine(p1, 90, y - 6, A4.width - 180, 0.3, COLORS.navyLight)
-  })
-
-  // 제출 일시
   const submittedStr = respondent.submittedAt
     ? new Date(respondent.submittedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
     : '—'
-  drawText(p1, '제출 일시', 100, boxY - 30, font, 9, COLORS.gray)
-  drawText(p1, ':', 155, boxY - 30, font, 9, COLORS.gray)
-  drawText(p1, submittedStr, 170, boxY - 30, font, 9, COLORS.black)
 
-  // 발급 기관
+  // ════════════════════════════════════════════════════════════
+  // Page 1: 표지
+  // ════════════════════════════════════════════════════════════
+  const p1 = pdfDoc.addPage([A4.width, A4.height])
+
+  // 헤더 바
+  drawRect(p1, 0, A4.height - 90, A4.width, 90, COLORS.navy)
+  drawText(p1, ORG, L, A4.height - 28, font, 9, COLORS.white)
+  drawText(p1, respondent.round.survey.title, L, A4.height - 52, font, 13, COLORS.white)
+  drawText(p1, `제${respondent.round.roundNo}회차`, L, A4.height - 74, font, 9, rgb(0.7, 0.85, 1))
+
+  // 문서 제목 (중앙)
+  const title = tPdf('individual.title')
+  const titleW = font.widthOfTextAtSize(title, 22)
+  drawText(p1, title, (A4.width - titleW) / 2, A4.height - 180, font, 22, COLORS.navy)
+
+  const subtitle = tPdf('individual.subtitle')
+  const subW = font.widthOfTextAtSize(subtitle, 11)
+  drawText(p1, subtitle, (A4.width - subW) / 2, A4.height - 210, font, 11, COLORS.gray)
+
+  drawHLine(p1, L, A4.height - 228, W, 1, COLORS.navy)
+
+  // 응답자 정보 박스 (y=380~560 영역)
+  const BOX_TOP = A4.height - 270
+  const BOX_H = 160
+  drawBorderRect(p1, L + 30, BOX_TOP - BOX_H, W - 60, BOX_H, COLORS.navy, 1)
+  drawRect(p1, L + 30, BOX_TOP - 22, W - 60, 22, COLORS.navyLight)
+  drawText(p1, '응  답  자  정  보', L + 38, BOX_TOP - 16, font, 10, COLORS.navy)
+
+  const fields: [string, string][] = [
+    ['성       명', respondent.name],
+    ['소  속  기  관', respondent.organization],
+    ['직       위', respondent.position],
+    ['전문가 구분', respondent.category],
+  ]
+  fields.forEach(([label, value], i) => {
+    const y = BOX_TOP - 45 - i * 28
+    drawText(p1, label, L + 45, y, font, 9, COLORS.gray)
+    drawText(p1, ':', L + 135, y, font, 9, COLORS.gray)
+    drawText(p1, value, L + 148, y, font, 9, COLORS.black)
+    if (i < 3) drawHLine(p1, L + 35, y - 9, W - 70, 0.3, COLORS.navyLight)
+  })
+
+  // 제출 일시
+  const dtY = BOX_TOP - BOX_H - 25
+  drawText(p1, '제출 일시', L + 45, dtY, font, 9, COLORS.gray)
+  drawText(p1, ':', L + 135, dtY, font, 9, COLORS.gray)
+  drawText(p1, submittedStr, L + 148, dtY, font, 9, COLORS.black)
+
+  // 하단 발급 기관
   const issuedBy = tPdf('individual.issued_by')
   const issuedW = font.widthOfTextAtSize(issuedBy, 10)
-  drawText(p1, issuedBy, (A4.width - issuedW) / 2, 140, font, 10, COLORS.navy)
-  drawText(p1, '본 확인서는 AHP 전문가 설문 응답 원본의 공식 기록입니다.',
-    (A4.width - font.widthOfTextAtSize('본 확인서는 AHP 전문가 설문 응답 원본의 공식 기록입니다.', 8)) / 2,
-    120, font, 8, COLORS.gray)
+  drawText(p1, issuedBy, (A4.width - issuedW) / 2, 150, font, 10, COLORS.navy)
+  const notice = '본 확인서는 AHP 전문가 설문 응답 원본의 공식 기록입니다.'
+  drawText(p1, notice, (A4.width - font.widthOfTextAtSize(notice, 8)) / 2, 130, font, 8, COLORS.gray)
 
   drawFooter(p1, font, 1, TOTAL_PAGES, ORG)
 
-  // ─── Page 2: 설문 원본 재현 ───────────────────────────────────
+  // ════════════════════════════════════════════════════════════
+  // Page 2: 설문 응답 원본
+  // ════════════════════════════════════════════════════════════
   const p2 = pdfDoc.addPage([A4.width, A4.height])
 
-  // 상단
+  // 헤더
   drawRect(p2, 0, A4.height - 45, A4.width, 45, COLORS.navyLight)
-  drawText(p2, '설문 응답 원본', 50, A4.height - 28, font, 13, COLORS.navy)
-  drawText(p2, respondent.name + ' 귀하', A4.width - 50 - font.widthOfTextAtSize(respondent.name + ' 귀하', 9), A4.height - 28, font, 9, COLORS.gray)
+  drawText(p2, '설문 응답 원본', L, A4.height - 28, font, 13, COLORS.navy)
+  const nameLabel = respondent.name + ' 귀하'
+  drawText(p2, nameLabel,
+    A4.width - R - font.widthOfTextAtSize(nameLabel, 9),
+    A4.height - 28, font, 9, COLORS.gray)
 
-  let curY = A4.height - 65
+  // ─── 응답 테이블 ─────────────────────────────────────
+  let curY = A4.height - 60
 
-  for (const pair of PAIRS4) {
+  // 테이블 헤더
+  const COL = { no: L, a: L + 20, vs: L + 140, b: L + 165, sel: L + 290, meaning: L + 345 }
+  const ROW_H = 22
+
+  drawRect(p2, L, curY - ROW_H, W, ROW_H, COLORS.navy)
+  drawText(p2, '문항', COL.no + 2, curY - 15, font, 8, COLORS.white)
+  drawText(p2, '좌측 항목', COL.a, curY - 15, font, 8, COLORS.white)
+  drawText(p2, '우측 항목', COL.b, curY - 15, font, 8, COLORS.white)
+  drawText(p2, '선택값', COL.sel, curY - 15, font, 8, COLORS.white)
+  drawText(p2, '응답 내용', COL.meaning, curY - 15, font, 8, COLORS.white)
+  curY -= ROW_H
+
+  // 테이블 행
+  PAIRS4.forEach((pair, idx) => {
     const answer = respondent.answers.find((a) => a.questionCode === pair.code)
-    const rawValue = answer?.rawValue ?? 0
+    const raw = answer?.rawValue ?? 0
     const itemA = ITEMS4[pair.a].label
     const itemB = ITEMS4[pair.b].label
+    const bgColor = idx % 2 === 0 ? rgb(1, 1, 1) : rgb(0.97, 0.97, 0.98)
+    const selColor = raw > 0 ? COLORS.navy : raw < 0 ? COLORS.green : COLORS.gray
 
-    // 문항 헤더
-    drawRect(p2, 50, curY - 2, A4.width - 100, 16, COLORS.navyLight)
-    drawText(p2, `${pair.code}. ${itemA}  vs  ${itemB}`, 58, curY, font, 9, COLORS.navy)
-    curY -= 20
+    // 행 배경
+    drawRect(p2, L, curY - ROW_H, W, ROW_H, bgColor)
+    drawHLine(p2, L, curY - ROW_H, W, 0.3, COLORS.navyLight)
 
-    // 척도 버튼 행
-    const LEFT_VALS = [9, 8, 7, 6, 5, 4, 3, 2]
-    const RIGHT_VALS = [2, 3, 4, 5, 6, 7, 8, 9]
-    const btnW = 20
-    const centerX = A4.width / 2
-    const rowY = curY - 14
+    const textY = curY - 15
 
-    // 좌측 라벨
-    const itemAW = font.widthOfTextAtSize(itemA, 8)
-    drawText(p2, itemA, centerX - 100 - itemAW - 4, rowY + 3, font, 8, COLORS.navy)
-    // 우측 라벨
-    drawText(p2, itemB, centerX + 104, rowY + 3, font, 8, COLORS.green)
+    drawText(p2, pair.code, COL.no + 2, textY, font, 8, COLORS.gray)
+    drawText(p2, itemA, COL.a, textY, font, 8, COLORS.navy)
+    drawText(p2, 'vs', COL.vs, textY, font, 8, COLORS.gray)
+    drawText(p2, itemB, COL.b, textY, font, 8, COLORS.green)
 
-    // 좌측 버튼 (9→2)
-    LEFT_VALS.forEach((val, i) => {
-      const x = centerX - 100 + i * (btnW + 1)
-      const selected = rawValue === val
-      if (selected) {
-        drawRect(p2, x, rowY - 2, btnW, 16, COLORS.navy)
-        drawText(p2, String(val), x + (val >= 10 ? 2 : 5), rowY + 1, font, 8, COLORS.white)
-      } else {
-        drawBorderRect(p2, x, rowY - 2, btnW, 16, COLORS.gray, 0.4)
-        drawText(p2, String(val), x + (val >= 10 ? 2 : 5), rowY + 1, font, 8, COLORS.gray)
-      }
-    })
+    // 선택값 강조 박스
+    const selStr = raw === 0 ? '1(동등)' : raw > 0 ? `←  ${raw}` : `${Math.abs(raw)}  →`
+    drawRect(p2, COL.sel - 2, curY - ROW_H + 3, 40, 16, selColor)
+    drawText(p2, selStr, COL.sel + 2, textY, font, 8, COLORS.white)
 
-    // 중앙 버튼 (1 = rawValue 0)
-    const cx = centerX - 11
-    const selected0 = rawValue === 0
-    if (selected0) {
-      drawRect(p2, cx, rowY - 3, 22, 18, COLORS.gray)
-      drawText(p2, '1', cx + 7, rowY + 2, font, 9, COLORS.white)
-    } else {
-      drawBorderRect(p2, cx, rowY - 3, 22, 18, COLORS.gray, 0.7)
-      drawText(p2, '1', cx + 7, rowY + 2, font, 9, COLORS.gray)
-    }
+    // 응답 의미
+    drawText(p2, fmtRaw(raw, itemA, itemB), COL.meaning, textY, font, 8, COLORS.black)
 
-    // 우측 버튼 (2→9)
-    RIGHT_VALS.forEach((val, i) => {
-      const x = centerX + 12 + i * (btnW + 1)
-      const selected = rawValue === -val
-      if (selected) {
-        drawRect(p2, x, rowY - 2, btnW, 16, COLORS.green)
-        drawText(p2, String(val), x + (val >= 10 ? 2 : 5), rowY + 1, font, 8, COLORS.white)
-      } else {
-        drawBorderRect(p2, x, rowY - 2, btnW, 16, COLORS.gray, 0.4)
-        drawText(p2, String(val), x + (val >= 10 ? 2 : 5), rowY + 1, font, 8, COLORS.gray)
-      }
-    })
+    curY -= ROW_H
+  })
 
-    // 선택 방향 텍스트
-    let dirText = '동등하게 중요'
-    if (rawValue > 0) dirText = `→ ${itemA} ${rawValue}배 더 중요`
-    else if (rawValue < 0) dirText = `→ ${itemB} ${Math.abs(rawValue)}배 더 중요`
-    drawText(p2, dirText, 58, rowY - 8, font, 7.5,
-      rawValue > 0 ? COLORS.navy : rawValue < 0 ? COLORS.green : COLORS.gray)
+  // 테이블 외곽선
+  const tableTop = A4.height - 60
+  const tableBottom = curY
+  drawBorderRect(p2, L, tableBottom, W, tableTop - tableBottom, COLORS.navy, 0.5)
 
-    curY = rowY - 20
-  }
+  // ─── 서명 영역 ─────────────────────────────────────
+  curY -= 20
+  drawHLine(p2, L, curY, W, 0.8, COLORS.navy)
+  curY -= 18
+  drawText(p2, '응 답 자 서 명', L, curY, font, 10, COLORS.navy)
+  curY -= 8
 
-  // 서명
-  curY -= 10
-  drawHLine(p2, 50, curY, A4.width - 100, 0.5, COLORS.navyLight)
-  curY -= 15
-  drawText(p2, '응답자 서명', 50, curY, font, 9, COLORS.navy)
-
+  const SIG_W = 220
+  const SIG_H = 70
   if (respondent.signature?.imageData) {
     try {
       const dataUrl = respondent.signature.imageData
-      const base64 = dataUrl.replace(/^data:image\/[a-z]+;base64,/, '')
-      const binary = atob(base64)
-      const imgBytes = new Uint8Array(binary.length)
-      for (let i = 0; i < binary.length; i++) imgBytes[i] = binary.charCodeAt(i)
-      const isPng = dataUrl.startsWith('data:image/png')
+      const base64 = dataUrl.replace(/^data:image\/[a-z+]+;base64,/, '')
+      const imgBytes = Buffer.from(base64, 'base64')
+      const isPng = dataUrl.includes('png')
       const img = isPng
         ? await pdfDoc.embedPng(imgBytes)
         : await pdfDoc.embedJpg(imgBytes)
-      p2.drawImage(img, { x: 50, y: curY - 65, width: 180, height: 55 })
-      drawBorderRect(p2, 50, curY - 65, 180, 55, COLORS.gray, 0.5)
+      drawBorderRect(p2, L, curY - SIG_H, SIG_W, SIG_H, COLORS.gray, 0.5)
+      p2.drawImage(img, { x: L + 2, y: curY - SIG_H + 2, width: SIG_W - 4, height: SIG_H - 4 })
     } catch (e) {
       console.error('[PDF] 서명 임베딩 실패:', e)
-      drawBorderRect(p2, 50, curY - 65, 180, 55, COLORS.gray, 0.5)
-      drawText(p2, '[서명 이미지 오류]', 75, curY - 38, font, 8, COLORS.gray)
+      drawBorderRect(p2, L, curY - SIG_H, SIG_W, SIG_H, COLORS.gray, 0.5)
+      drawText(p2, '[서명 이미지 로드 실패]', L + 40, curY - SIG_H / 2, font, 8, COLORS.gray)
     }
+  } else {
+    drawBorderRect(p2, L, curY - SIG_H, SIG_W, SIG_H, COLORS.gray, 0.5)
+    drawText(p2, '[서명 없음]', L + 80, curY - SIG_H / 2, font, 8, COLORS.gray)
   }
+
+  // 서명 아래 이름 / 날짜
+  const sigDate = respondent.signature?.signedAt
+    ? new Date(respondent.signature.signedAt as Date).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+    : submittedStr
+  drawText(p2, `서명일: ${sigDate}`, L, curY - SIG_H - 14, font, 8, COLORS.gray)
 
   drawFooter(p2, font, 2, TOTAL_PAGES, ORG)
 
-  // ─── Page 3: 증빙 ─────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════
+  // Page 3: 제출 증빙
+  // ════════════════════════════════════════════════════════════
   const p3 = pdfDoc.addPage([A4.width, A4.height])
 
   drawRect(p3, 0, A4.height - 45, A4.width, 45, COLORS.navyLight)
-  drawText(p3, '제출 증빙', 50, A4.height - 28, font, 13, COLORS.navy)
+  drawText(p3, '제출 증빙', L, A4.height - 28, font, 13, COLORS.navy)
 
-  let y3 = A4.height - 80
+  let y3 = A4.height - 70
 
-  // 제출 로그 섹션
+  // 제출 기록
   y3 = drawSectionHeader(p3, font, '제출 기록', y3, COLORS.navy)
-
   const log = respondent.submissionLog
-  const logFields: [string, string][] = [
+  const logRows: [string, string][] = [
     ['응답자 ID', respondentId],
     ['제출 일시', submittedStr],
     ['IP 주소', log?.ipAddress ?? '—'],
-    ['브라우저/기기', truncate(log?.userAgent ?? '—', font, 8, 350)],
+    ['브라우저 / 기기', truncate(log?.userAgent ?? '—', font, 8, 350)],
   ]
-  logFields.forEach(([label, value]) => {
-    drawText(p3, label, 60, y3, font, 8.5, COLORS.gray)
-    drawText(p3, ':', 140, y3, font, 8.5, COLORS.gray)
-    drawText(p3, value, 150, y3, font, 8.5, COLORS.black)
-    y3 -= 18
+  logRows.forEach(([label, value], i) => {
+    const rowY = y3 - i * 22
+    drawRect(p3, L, rowY - 18, W, 22, i % 2 === 0 ? rgb(1,1,1) : rgb(0.97,0.97,0.98))
+    drawText(p3, label, L + 8, rowY - 10, font, 8.5, COLORS.gray)
+    drawText(p3, ':', L + 110, rowY - 10, font, 8.5, COLORS.gray)
+    drawText(p3, value, L + 120, rowY - 10, font, 8.5, COLORS.black)
+    drawHLine(p3, L, rowY - 18, W, 0.3, COLORS.navyLight)
   })
+  drawBorderRect(p3, L, y3 - logRows.length * 22 - 18, W, logRows.length * 22 + 18, COLORS.navy, 0.4)
+  y3 -= logRows.length * 22 + 30
 
-  y3 -= 10
+  // 데이터 무결성
   y3 = drawSectionHeader(p3, font, '데이터 무결성 (SHA-256)', y3, COLORS.navy)
-
   const hash = log?.dataHash ?? '—'
-  // 해시는 길어서 두 줄로 나눔
   const half = Math.ceil(hash.length / 2)
-  drawText(p3, hash.slice(0, half), 60, y3, font, 7.5, COLORS.black)
-  y3 -= 14
-  drawText(p3, hash.slice(half), 60, y3, font, 7.5, COLORS.black)
-  y3 -= 24
+  drawText(p3, hash.slice(0, half), L + 8, y3 - 8, font, 7.5, COLORS.black)
+  drawText(p3, hash.slice(half), L + 8, y3 - 22, font, 7.5, COLORS.black)
+  y3 -= 45
 
-  // 고지 문구
-  y3 -= 10
-  drawHLine(p3, 50, y3, A4.width - 100, 0.5, COLORS.navyLight)
-  y3 -= 20
-
+  // 고지
+  drawHLine(p3, L, y3, W, 0.5, COLORS.navyLight)
+  y3 -= 18
   const notices = [
     '본 확인서는 응답자의 전자서명이 포함된 원본 기록입니다.',
     '제출된 응답 데이터는 SHA-256 해시로 무결성이 보장됩니다.',
     '가중치 및 CR 등 분석 결과는 이 문서에 포함되지 않습니다.',
     '본 자료는 해농공매 물량 배분 가중치 산출 목적으로만 사용됩니다.',
   ]
-  notices.forEach((notice) => {
-    drawText(p3, `• ${notice}`, 60, y3, font, 8, COLORS.gray)
+  notices.forEach((n) => {
+    drawText(p3, `• ${n}`, L + 8, y3, font, 8, COLORS.gray)
     y3 -= 16
   })
 
