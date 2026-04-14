@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
         where: { isLocked: true },
         include: {
           result: { include: { adjustment: true } },
+          submissionLog: true,
+          signature: { select: { signedAt: true } },
         },
         orderBy: { submittedAt: 'asc' },
       },
@@ -46,6 +48,7 @@ export async function GET(req: NextRequest) {
     organization: r.organization,
     category: r.category,
     submittedAt: r.submittedAt,
+    isLocked: r.isLocked,
     result: r.result
       ? {
           id: r.result.id,
@@ -61,6 +64,15 @@ export async function GET(req: NextRequest) {
             : null,
         }
       : null,
+    submissionLog: r.submissionLog
+      ? {
+          ipAddress: r.submissionLog.ipAddress,
+          userAgent: r.submissionLog.userAgent,
+          submittedAt: r.submissionLog.submittedAt,
+          dataHash: r.submissionLog.dataHash,
+        }
+      : null,
+    signedAt: r.signature?.signedAt ?? null,
   }))
 
   return NextResponse.json({ roundId: round.id, respondents: rows })

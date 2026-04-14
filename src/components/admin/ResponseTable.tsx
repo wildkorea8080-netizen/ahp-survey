@@ -12,6 +12,7 @@ export interface ResponseRow {
   organization: string
   category: string
   submittedAt: Date | null
+  isLocked: boolean
   result: {
     id: string
     cr: number
@@ -23,6 +24,13 @@ export interface ResponseRow {
       changedQuestions: string[]
     } | null
   } | null
+  submissionLog: {
+    ipAddress: string
+    userAgent: string
+    submittedAt: Date
+    dataHash: string
+  } | null
+  signedAt: Date | null
 }
 
 interface Props {
