@@ -51,7 +51,6 @@ export default async function SurveyPage({ params }: Props) {
         <div className="mx-auto max-w-3xl px-4 py-4">
           <p className="text-xs text-[#5F5E5A]">{process.env.NEXT_PUBLIC_ORG_NAME}</p>
           <h1 className="text-base font-bold text-[#1F497D]">{round.survey.title}</h1>
-          <p className="text-xs text-[#5F5E5A]">제{round.roundNo}회차</p>
         </div>
       </header>
 
