@@ -127,6 +127,7 @@ export interface ApiError {
 export const RESPONDENT_CATEGORIES = [
   '정부기관',
   '공공기관',
+  '연구기관',
   '학계전문가',
   '법·제도전문가',
   '회계전문가',
