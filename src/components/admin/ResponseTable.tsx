@@ -42,6 +42,25 @@ export default function ResponseTable({ rows, onRefresh }: Props) {
   const [adjustTarget, setAdjustTarget] = useState<ResponseRow | null>(null)
   const [detailTarget, setDetailTarget] = useState<ResponseRow | null>(null)
   const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null)
+  const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
+
+  async function deleteRespondent(respondentId: string, name: string) {
+    if (!confirm(`"${name}" 응답자의 제출 데이터를 삭제할까요?\n\n답변, 서명, 제출 기록이 모두 삭제되며 복구할 수 없습니다.`)) return
+    setDeleteLoadingId(respondentId)
+    try {
+      const res = await fetch(`/api/admin/respondents/${respondentId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+        alert(`삭제 실패: ${json.error ?? res.statusText}`)
+        return
+      }
+      onRefresh()
+    } catch (err) {
+      alert(`삭제 오류: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setDeleteLoadingId(null)
+    }
+  }
 
   async function downloadIndividualPDF(respondentId: string, name: string) {
     setPdfLoadingId(respondentId)
@@ -164,6 +183,15 @@ export default function ResponseTable({ rows, onRefresh }: Props) {
                           🔧
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs border-[#C62828] text-[#C62828] hover:bg-red-50"
+                        disabled={deleteLoadingId === row.id}
+                        onClick={() => deleteRespondent(row.id, row.name)}
+                      >
+                        {deleteLoadingId === row.id ? '...' : '🗑'}
+                      </Button>
                     </div>
                   </td>
                 </tr>
