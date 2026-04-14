@@ -3,8 +3,12 @@
  * CLAUDE.md 절대 원칙 #3: 응답자 PDF에 분석 결과(가중치/CR) 포함 금지
  */
 
-import chromium from '@sparticuz/chromium'
+import chromium from '@sparticuz/chromium-min'
 import puppeteer from 'puppeteer-core'
+
+// @sparticuz/chromium-min: 바이너리를 런타임에 다운로드 (Vercel 번들 크기 초과 방지)
+const CHROMIUM_URL =
+  'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.tar'
 import { buildPdfHtml } from './buildPdfHtml'
 import { prisma } from '@/lib/prisma'
 
@@ -50,7 +54,7 @@ export async function generateIndividualPDF(respondentId: string): Promise<Uint8
   // 로컬 개발: CHROME_EXECUTABLE_PATH 환경변수 설정 필요
   // Vercel: @sparticuz/chromium이 자동으로 바이너리 경로 제공
   const executablePath =
-    process.env.CHROME_EXECUTABLE_PATH || (await chromium.executablePath())
+    process.env.CHROME_EXECUTABLE_PATH || (await chromium.executablePath(CHROMIUM_URL))
 
   const browser = await puppeteer.launch({
     args: chromium.args,
