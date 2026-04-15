@@ -100,13 +100,18 @@ function buildPage1(doc: PDFDocument, font: PDFFont, d: BuildData) {
   ]
   const boxH = HDR_H + fields.length * ROW_H
 
-  // 박스 테두리 (먼저 그림)
-  page.drawRectangle({ x: ML, y: y - boxH, width: CW, height: boxH,
-    borderColor: C.navy, borderWidth: 1.2, color: C.white })
+  const BORDER = 0.7
+  const boxTop    = y
+  const boxBottom = y - boxH
+  const boxLeft   = ML
+  const boxRight  = ML + CW
 
-  // 박스 헤더
-  page.drawRectangle({ x: ML, y: y - HDR_H, width: CW, height: HDR_H, color: C.navyLight })
-  page.drawText('응  답  자  정  보', { x: ML + 14, y: y - HDR_H + 8, size: 9.5, font, color: C.navy })
+  // 1) 배경 먼저 (테두리 없음)
+  page.drawRectangle({ x: boxLeft, y: boxBottom, width: CW, height: boxH, color: C.white })
+
+  // 박스 헤더 배경
+  page.drawRectangle({ x: boxLeft, y: boxTop - HDR_H, width: CW, height: HDR_H, color: C.navyLight })
+  page.drawText('응  답  자  정  보', { x: ML + 14, y: boxTop - HDR_H + 8, size: 9.5, font, color: C.navy })
   y -= HDR_H
 
   // 필드 행
@@ -117,17 +122,30 @@ function buildPage1(doc: PDFDocument, font: PDFFont, d: BuildData) {
 
     // 짝수 행 배경
     if (i % 2 === 1)
-      page.drawRectangle({ x: ML, y: rowTop - ROW_H, width: CW, height: ROW_H,
+      page.drawRectangle({ x: boxLeft, y: rowTop - ROW_H, width: CW, height: ROW_H,
         color: rgb(0.97, 0.98, 1) })
-
-    // 구분선 (첫 행 제외)
-    if (i > 0)
-      page.drawLine({ start: { x: ML, y: rowTop }, end: { x: A4.w - MR, y: rowTop },
-        thickness: 0.4, color: C.border })
 
     page.drawText(label, { x: ML + 14, y: textY, size: 9, font, color: C.gray })
     page.drawText(':', { x: ML + 96,  y: textY, size: 9, font, color: C.gray })
     page.drawText(clamp(val, font, 9, CW - 118), { x: ML + 106, y: textY, size: 9, font, color: C.dark })
+  }
+
+  // 2) 선을 마지막에 그려서 배경에 가려지지 않게
+  // 외곽 4면 (동일 두께)
+  const line = (x1: number, y1: number, x2: number, y2: number, color = C.navy) =>
+    page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: BORDER, color })
+  line(boxLeft,  boxTop,    boxRight, boxTop)    // 상단
+  line(boxLeft,  boxBottom, boxRight, boxBottom) // 하단
+  line(boxLeft,  boxBottom, boxLeft,  boxTop)    // 좌측
+  line(boxRight, boxBottom, boxRight, boxTop)    // 우측
+
+  // 헤더 하단선
+  line(boxLeft, boxTop - HDR_H, boxRight, boxTop - HDR_H)
+
+  // 행 구분선
+  for (let i = 1; i < fields.length; i++) {
+    const lineY = boxTop - HDR_H - i * ROW_H
+    line(boxLeft, lineY, boxRight, lineY, C.border)
   }
 
   y -= fields.length * ROW_H + 14
